@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movies</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+
+        th {
+            background-color: lightgray;
+        }
+
+        #actorForm {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Movies</h1>
+    <button onclick="createTable()">Create Table</button>
+    <button onclick="addMovie()">Add New Actor</button>
+    <div id="tableContainer"></div>
+    <div id="actorForm">
+        <h1>ACTOR FORM</h1>
+        <label for="firstname">Firstname</label>
+        <input type="text" name="firstname"></input>
+        <label for="lastname">Lastname</label>
+        <input type="text" name="lastname"></input>
+        <button onclick="addActor()">Add new Actor</button>
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    </div>
+    <script>
+        function addMovie() {
+            let actorForm = document.querySelector("#actorForm")
+            actorForm.style.display = "block";
+        }
+
+        function addActor() {
+            const firstnameInput = document.querySelector('input[name="firstname"]');
+            const lastnameInput = document.querySelector('input[name="lastname"]');
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            const firstname = firstnameInput.value.trim();
+            const lastname = lastnameInput.value.trim();
+
+            if (!firstname) {
+                console.error('First name is required.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('firstname', firstname);
+            formData.append('lastname', lastname);
+
+            fetch('/api/newActor', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+                // Clear the form fields
+                firstnameInput.value = '';
+                lastnameInput.value = '';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+
+
+        function createTable() {
+            fetch('/api/movies/')
+                .then(response => response.json())
+                .then(data => {
+                    const movies = data;
+                    const tableContainer = document.getElementById('tableContainer');
+
+                    // Create the table element
+                    const table = document.createElement('table');
+                    table.style.width = '100%';
+                    table.style.borderCollapse = 'collapse';
+
+                    // Create the table header row
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    const headers = ['ID', 'Title', 'Description'];
+                    headers.forEach(headerText => {
+                        const header = document.createElement('th');
+                        header.textContent = headerText;
+                        header.style.backgroundColor = 'lightgray';
+                        header.style.padding = '8px';
+                        header.style.border = '1px solid black';
+                        headerRow.appendChild(header);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+
+                    // Create the table body rows
+                    const tbody = document.createElement('tbody');
+                    movies.forEach(movie => {
+                        const row = document.createElement('tr');
+
+                        // Create ID cell
+                        const idCell = document.createElement('td');
+                        idCell.textContent = movie.id;
+                        idCell.style.padding = '8px';
+                        idCell.style.border = '1px solid black';
+                        row.appendChild(idCell);
+
+                        // Create clickable movie title
+                        const titleCell = document.createElement('td');
+                        const titleLink = document.createElement('a');
+                        titleLink.textContent = movie.title;
+                        titleLink.href = `/movie/${movie.id}`; // Set the URL to the movie detail page
+                        titleCell.appendChild(titleLink);
+                        titleCell.style.padding = '8px';
+                        titleCell.style.border = '1px solid black';
+                        row.appendChild(titleCell);
+
+                        // Create description cell
+                        const descriptionCell = document.createElement('td');
+                        descriptionCell.textContent = movie.description;
+                        descriptionCell.style.padding = '8px';
+                        descriptionCell.style.border = '1px solid black';
+                        row.appendChild(descriptionCell);
+
+                        tbody.appendChild(row);
+                    });
+                    table.appendChild(tbody);
+
+                    // Append the table to the table container
+                    tableContainer.innerHTML = '';
+                    tableContainer.appendChild(table);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+
+    </script>
+</body>
+</html>
